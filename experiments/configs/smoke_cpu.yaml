@@ -1,0 +1,29 @@
+schema_version: 1
+run:
+  name: smoke-cpu
+  seed: 1234
+  device: cpu
+  max_epochs: 2
+  max_steps: 8
+workload:
+  name: synthetic_classification
+  data_dir: data
+  batch_size: 32
+  validation_split: 0.25
+  num_examples: 256
+  input_dim: 16
+  num_classes: 4
+  num_workers: 0
+optimizer:
+  name: sgd
+  learning_rate: 0.05
+  momentum: 0.0
+  weight_decay: 0.0
+validation:
+  every_steps: 4
+  target_accuracy: 0.80
+  max_batches: 2
+telemetry:
+  format: jsonl
+  output_dir: runs
+

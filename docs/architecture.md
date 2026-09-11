@@ -510,6 +510,10 @@ The week labels are targets, not release commitments.
 - ResNet-18 trains on the fixed CIFAR-10 split.
 - Configuration and seeds are recorded.
 - A validation target and time budget are established.
+- Tooling uses `uv` with project metadata in `pyproject.toml`.
+- CIFAR-10 data is stored under the repo-local `data/` directory.
+- A tiny synthetic CPU smoke run verifies the training loop without downloading CIFAR-10.
+- Reference runs write `resolved_config.yaml`, `events.jsonl`, and `metrics.json` under `runs/<run_id>/`.
 
 ### Milestone 2: barrier runtime
 

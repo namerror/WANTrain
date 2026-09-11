@@ -1,0 +1,29 @@
+schema_version: 1
+run:
+  name: cifar10-resnet18-local
+  seed: 1234
+  device: auto
+  max_epochs: 20
+  max_steps:
+  max_duration: 45m
+workload:
+  name: cifar10_resnet18
+  data_dir: data
+  batch_size: 128
+  validation_split: 0.10
+  download: true
+  num_workers: 4
+  pin_memory: true
+optimizer:
+  name: sgd
+  learning_rate: 0.1
+  momentum: 0.9
+  weight_decay: 0.0005
+validation:
+  every_steps: 200
+  target_accuracy: 0.80
+  max_batches:
+telemetry:
+  format: jsonl
+  output_dir: runs
+

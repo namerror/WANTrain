@@ -6,7 +6,7 @@ The project studies a practical question: how should training workers synchroniz
 
 WANTrain begins as a focused research prototype for controlled experiments. Its broader goal is to identify mechanisms that could make large-scale distributed ML training and computing more useful across mixed clusters, remote accelerators, and wide-area networks.
 
-> **Project status:** architecture and experimental design. The runtime is not implemented yet.
+> **Project status:** milestone 1 setup. The single-process reference path is being established before the distributed runtime.
 
 ## What WANTrain will provide
 
@@ -69,6 +69,30 @@ Later work may explore additional workloads, dynamic coordination regimes, churn
 ## Documentation
 
 The [architecture and experimental design](docs/architecture.md) defines the v0.1 scope, protocol semantics, runtime invariants, evaluation methodology, and decisions that implementations should follow.
+
+## Milestone 1 setup
+
+WANTrain uses `uv` for Python environment management. Install the runtime and development dependencies with:
+
+```bash
+uv sync --extra dev
+```
+
+The core dependencies are PyTorch, TorchVision, NumPy, PyYAML, Typer, Rich, and tqdm. Development checks use pytest and Ruff.
+
+Run the tiny CPU smoke reference:
+
+```bash
+uv run wantrain reference run --config experiments/configs/smoke_cpu.yaml
+```
+
+Run the CIFAR-10 ResNet-18 reference after dependencies are installed and CUDA is available:
+
+```bash
+uv run wantrain reference run --config experiments/configs/cifar10_resnet18_local.yaml
+```
+
+Reference runs write resolved configuration, JSONL events, and final metrics under `runs/`. CIFAR-10 data is stored under `data/`.
 
 ## License
 
