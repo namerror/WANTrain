@@ -1,4 +1,6 @@
-# WANTrain Architecture and Experimental Design
+# Proposed distributed runtime architecture
+
+> **Design proposal, not the current implementation.** This document records an earlier WANTrain direction centered on a future multi-process PyTorch coordinator, synchronization policies, and WAN emulation. Those components are not implemented in this repository. The current research milestone is the [pipeline flow simulator](../README.md), documented in the [simulator walkthrough](flow_scheduling_design.md) and [experiment guide](experiments.md). The existing PyTorch reference is single-process.
 
 ## 1. Purpose
 

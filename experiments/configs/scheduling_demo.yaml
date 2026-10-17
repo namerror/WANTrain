@@ -1,0 +1,22 @@
+# Synthetic, normalized teaching example. Time is milliseconds; transfers are MiB.
+# Both two-stage training jobs share one 1 MiB/ms link. Each job has its own workers.
+link:
+  capacity_mib_per_ms: 1.0
+  delivery_delay_ms: 0.0
+
+jobs:
+  - name: A
+    start_ms: 0.0
+    microbatches: 4
+    forward_ms: [2.0, 2.0]
+    backward_ms: [2.0, 2.0]
+    activation_mib: 6.0
+    gradient_mib: 6.0
+
+  - name: B
+    start_ms: 0.0
+    microbatches: 4
+    forward_ms: [3.0, 6.0]
+    backward_ms: [3.0, 6.0]
+    activation_mib: 2.0
+    gradient_mib: 2.0

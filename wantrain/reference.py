@@ -17,6 +17,9 @@ from wantrain.workloads import build_workload
 
 
 def run_reference(config: ReferenceConfig) -> Path:
+    '''
+    Run a reference training job.
+    '''
     seed_everything(config.seed)
     run_id = make_run_id(config.run_name)
     run_dir = config.output_dir / run_id
@@ -129,6 +132,9 @@ def seed_everything(seed: int) -> None:
 
 
 def resolve_device(preference: str) -> torch.device:
+    '''
+    Either CPU or CUDA device is returned based on the preference and availability.
+    '''
     if preference == "cpu":
         return torch.device("cpu")
     if preference == "cuda":
@@ -155,6 +161,11 @@ def train_step(
     labels: torch.Tensor,
     device: torch.device,
 ) -> float:
+    '''
+    Run a single training step: forward pass, loss computation, backward pass, and optimizer step.
+    Returns the training loss as a float.
+    '''
+
     model.train()
     inputs = inputs.to(device, non_blocking=True)
     labels = labels.to(device, non_blocking=True)
@@ -216,6 +227,10 @@ def update_validation_metrics(
 
 
 def make_run_id(run_name: str) -> str:
+    '''
+    Generates a unique run ID based on the current timestamp, a slugified version of the run name, and a suffix derived from the current time in nanoseconds.
+    The run ID format is: YYYYMMDD-HHMMSS-slug-suffix
+    '''
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     slug = "".join(ch if ch.isalnum() else "-" for ch in run_name.lower()).strip("-")
     suffix = f"{time.monotonic_ns() % 1_000_000:06d}"

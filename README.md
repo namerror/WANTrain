@@ -1,98 +1,91 @@
 # WANTrain
 
-WANTrain is an experimental distributed PyTorch training runtime for heterogeneous and changing compute environments.
+WANTrain explores how distributed training should use a network when compute and communication do not progress at uniform speeds. The **current experiment** asks a narrow question: when two pipeline-training jobs share a bottleneck link, how does the order of their transfers change worker idle time and step completion?
 
-The project studies a practical question: how should training workers synchronize when their compute speed, bandwidth, latency, and availability differ over time?
+The repository currently has a **synthetic, discrete-event flow-scheduling simulator** and a separate **single-process PyTorch training reference**. The simulator is the active research milestone. It does not train a model, run a distributed PyTorch job, or emulate packets. The PyTorch reference can later help calibrate compute times and tensor sizes; it is not connected to the simulator yet.
 
-WANTrain begins as a focused research prototype for controlled experiments. Its broader goal is to identify mechanisms that could make large-scale distributed ML training and computing more useful across mixed clusters, remote accelerators, and wide-area networks.
-
-> **Project status:** milestone 1 setup. The single-process reference path is being established before the distributed runtime.
-
-## What WANTrain will provide
-
-- A centralized coordinator and multiple PyTorch workers.
-- Barrier-based and streaming model-update coordination.
-- Fixed and adaptive local-training intervals.
-- Staleness-aware update admission and weighting.
-- Per-worker compute, network, and failure emulation.
-- Structured telemetry for reproducible policy comparisons.
-- Time-to-target accuracy as the primary outcome.
-
-The initial workload is ResNet-18 on CIFAR-10. Keeping the model conventional makes changes in training behavior easier to attribute to the distributed system rather than to an unstable workload.
-
-## System shape
-
-```mermaid
-flowchart LR
-    C[Coordinator<br/>global model and policy]
-    C <--> A[Worker A<br/>local training]
-    C <--> B[Worker B<br/>local training]
-    C <--> D[Worker C<br/>local training]
-    N[Network and fault profiles] -.-> A
-    N -.-> B
-    N -.-> D
-    C --> T[(Telemetry)]
-    A --> T
-    B --> T
-    D --> T
-    T --> R[Analysis and plots]
-```
-
-Workers train from a versioned global-model snapshot, then return parameter deltas with their base version and telemetry. The coordinator validates and aggregates each update according to the selected coordination, scheduling, admission, and weighting policies.
-
-WANTrain treats these as separate experimental choices. For example, local SGD is a configurable amount of local work and can operate with either a global barrier or streaming updates.
-
-## Initial experiments
-
-The first useful benchmark will compare:
-
-| Policy | Coordination | Local work |
+| Part | Status | Purpose |
 |---|---|---|
-| Synchronous SGD | Barrier | One step |
-| Synchronous local SGD | Barrier | Fixed multi-step interval |
-| Asynchronous local SGD | Streaming | Fixed interval |
-| Adaptive local SGD | Streaming | Interval selected from worker and network telemetry |
+| Pipeline flow simulator | Runs now | Compare link policies on the same two-stage training workload and inspect their decisions. |
+| Local PyTorch reference | Runs now | Train a small synthetic classifier or local CIFAR-10/ResNet-18 and record telemetry. |
+| Multi-process training, WAN emulation, optical networks | Future work | Validate and extend questions raised by the controlled simulator. |
 
-Experiments will apply repeatable WAN conditions and scheduled disruptions, such as bandwidth degradation or a temporary worker disconnect. Results will report convergence alongside communication cost, staleness, idle time, rejected work, and recovery behavior.
+## Try the simulator
 
-## Roadmap
-
-1. Establish a reproducible single-process CIFAR-10 reference.
-2. Implement a two-worker barrier runtime and versioned aggregation.
-3. Add streaming updates, fixed local work, and staleness tracking.
-4. Add isolated network profiles and deterministic fault injection.
-5. Evaluate a simple telemetry-driven local-work scheduler.
-6. Publish a reproducible v0.1 benchmark and evidence package.
-
-Later work may explore additional workloads, dynamic coordination regimes, churn-aware scheduling, update compression, and experiments across real geographic links. Those directions will be chosen from measured v0.1 behavior rather than assumed in advance.
-
-## Documentation
-
-The [architecture and experimental design](docs/architecture.md) defines the v0.1 scope, protocol semantics, runtime invariants, evaluation methodology, and decisions that implementations should follow.
-
-## Milestone 1 setup
-
-WANTrain uses `uv` for Python environment management. Install the runtime and development dependencies with:
+The simulator itself needs Python 3.11+ and PyYAML. From the repository root, [uv](https://docs.astral.sh/uv/) can install the **full** project environment, including PyTorch and test tools:
 
 ```bash
 uv sync --extra dev
+uv run python -m wantrain.sim.run --config experiments/configs/scheduling_demo.yaml
 ```
 
-The core dependencies are PyTorch, TorchVision, NumPy, PyYAML, Typer, Rich, and tqdm. Development checks use pytest and Ruff.
+The command prints a table and a timeline for five policies: FIFO, equal bandwidth sharing, shortest remaining flow, and a timing-aware heuristic with either profiled or actual compute times. All policies see the **same actual work and link capacity**. To inspect why a policy chose a flow:
 
-Run the tiny CPU smoke reference:
+```bash
+uv run python -m wantrain.sim.run --config experiments/configs/scheduling_demo.yaml \
+  --policy fifo --policy srpt --policy echelon_static --decisions
+```
+
+At **3 ms**, Job B's 2 MiB activation transfer becomes ready while Job A's transfer has 5 MiB left. `srpt` switches to B; `fifo` and `echelon_static` continue A. The printed timeline lets you follow that choice into each job's stage-1 compute and eventual step completion. See the [guided simulator walkthrough](docs/flow_scheduling_design.md) for the dependency graph, scheduling rule, and trace notation.
+
+You can run the module with `python3 -m wantrain.sim.run` instead if PyYAML is already installed in that Python environment. Tests:
+
+```bash
+uv run pytest -q
+```
+
+## What is being simulated?
+
+Each of two jobs has two modeled workers. It splits one training step into microbatches. For each microbatch, stage 0 computes, an activation crosses the shared link, and stage 1 computes. After the forward phase, gradients flow back in reverse microbatch order:
+
+```text
+stage 0 forward → activation flow → stage 1 forward
+stage 0 backward ← gradient flow  ← stage 1 backward
+```
+
+A worker computes one task at a time. A receiver waits until both its local predecessor and the required flow finish. The network has one shared capacity and a fixed delivery delay. Scheduling decides **which ready flow receives link capacity**; it does not change the amount of computation or data.
+
+This isolates a useful systems question, but it leaves out GPU overlap, transport, packet loss, topology, collective communication, and training convergence. The timing-aware rule is **inspired by** [EchelonFlow's staggered desired flow completion times](https://conferences.sigcomm.org/hotnets/2022/papers/hotnets22_pan.pdf). It is our simple earliest-target heuristic, not an implementation or reproduction of EchelonFlow's full optimization or system.
+
+## Experiments available today
+
+| Config | What changes | What it teaches |
+|---|---|---|
+| [`scheduling_demo.yaml`](experiments/configs/scheduling_demo.yaml) | Two jobs with different compute times and flow sizes share a 1 MiB/ms link. | How FIFO, fair sharing, size priority, and timing priority create different schedules. |
+| [`scheduling_profile_error_demo.yaml`](experiments/configs/scheduling_profile_error_demo.yaml) | Only Job B's **scheduler-visible** receiving-stage compute estimates double. Actual compute and bytes stay the same. | How a wrong profile can change a timing-aware choice without changing the underlying workload. |
+
+These are **crafted teaching examples**, not benchmark evidence that one policy is generally better. The next research experiment will sweep link capacity, compute heterogeneity, and signed profile error on paired workloads, then explain the outcomes with both a figure and exact traces. The [experiment guide](docs/experiments.md) explains the config fields, metrics, comparison rules, and how to add a scenario.
+
+## Repository map
+
+| Path | Role |
+|---|---|
+| [`wantrain/sim/workload.py`](wantrain/sim/workload.py) | Parses simulator YAML and builds the forward/backward task dependency graph. |
+| [`wantrain/sim/engine.py`](wantrain/sim/engine.py) | Advances compute and flow events, applies link policies, records decisions and metrics. |
+| [`wantrain/sim/run.py`](wantrain/sim/run.py) | Runs policies, prints timelines, and optionally saves exact JSON traces. |
+| [`experiments/configs/`](experiments/configs/) | Input scenarios for the simulator and local PyTorch reference. |
+| [`tests/test_sim_engine.py`](tests/test_sim_engine.py) | Checks dependency order, link accounting, policy choices, determinism, and profile isolation. |
+| [`wantrain/reference.py`](wantrain/reference.py), [`wantrain/workloads.py`](wantrain/workloads.py) | Separate single-process PyTorch reference path. |
+| [`wantrain/config.py`](wantrain/config.py), [`wantrain/telemetry.py`](wantrain/telemetry.py), [`wantrain/cli.py`](wantrain/cli.py) | Configuration, event logging, and CLI for the reference path. |
+| [`docs/`](docs/) | Model walkthrough, experiment guide, and a proposed later distributed runtime design. |
+
+Generated runs and local work go under `runs/`, `data/`, and `temp/`; Git ignores those directories. The local learning checklist is `temp/progress.md` when present, so it does not appear in a fresh clone.
+
+## Local PyTorch reference
+
+This is a separate baseline for real model execution. It is **single-process**, with no simulated flow scheduler or distributed workers:
 
 ```bash
 uv run wantrain reference run --config experiments/configs/smoke_cpu.yaml
 ```
 
-Run the CIFAR-10 ResNet-18 reference after dependencies are installed and CUDA is available:
+The CPU smoke config uses a tiny synthetic classifier. [`cifar10_resnet18_local.yaml`](experiments/configs/cifar10_resnet18_local.yaml) is a longer local training config that may download CIFAR-10 and use CUDA if available. Reference runs write a resolved YAML config, JSONL events, and `metrics.json` under `runs/`. The [proposed runtime architecture](docs/architecture.md) records a later direction; its coordinator, transport, and synchronization policies are not implemented here.
 
-```bash
-uv run wantrain reference run --config experiments/configs/cifar10_resnet18_local.yaml
-```
+## Read next
 
-Reference runs write resolved configuration, JSONL events, and final metrics under `runs/`. CIFAR-10 data is stored under `data/`.
+1. [Simulator walkthrough](docs/flow_scheduling_design.md): follow one microbatch and one scheduling decision through the code.
+2. [Experiment guide](docs/experiments.md): change a scenario, compare policies fairly, and interpret outputs.
+3. [Proposed distributed runtime architecture](docs/architecture.md): longer-term ideas, separate from the current simulator.
 
 ## License
 

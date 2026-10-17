@@ -1,7 +1,7 @@
 [project]
 name = "wantrain"
 version = "0.1.0"
-description = "Experimental distributed PyTorch training runtime for heterogeneous WAN-like environments."
+description = "Research prototype for distributed-training flow scheduling and heterogeneous systems."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
