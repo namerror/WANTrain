@@ -11,6 +11,8 @@ uv run python -m wantrain.sim.run --config experiments/configs/scheduling_profil
 
 Use `--policy` more than once to compare a subset, `--decisions` to print choices whenever the ready-flow set or selected flow changes, and `--no-timeline` for a compact table. `--output temp/demo.json` writes the resolved scenario, metrics, task times, exact compute/link intervals, and decisions. The `temp/` directory is ignored by Git.
 
+Use `--plot temp/demo.svg` to save a time-scaled SVG timeline. It places stage compute, activation link service, and gradient link service on one millisecond axis for every selected policy. Blue means forward compute, purple backward compute, green activation transfer, and orange gradient transfer. Bar labels identify phases and microbatches; hover for exact intervals. A gap on a transfer row means the shared link is serving something else or idle; simultaneous bars across transfer rows mean fair sharing. The bars show link service time, not the entire wait from flow release to delivery.
+
 ```bash
 uv run python -m wantrain.sim.run --config experiments/configs/scheduling_demo.yaml \
   --policy fifo --policy srpt --decisions --output temp/flow_demo.json

@@ -19,6 +19,15 @@ uv sync --extra dev
 uv run python -m wantrain.sim.run --config experiments/configs/scheduling_demo.yaml
 ```
 
+For a time-scaled plot of compute and transfers, run:
+
+```bash
+uv run python -m wantrain.sim.run --config experiments/configs/scheduling_demo.yaml \
+  --policy fifo --plot temp/fifo.svg
+```
+
+Open `temp/fifo.svg` in a browser. Blue, purple, green, and orange mark forward compute, backward compute, activation transfers, and gradient transfers. Each bar has a tooltip with its microbatch and exact times. The activation rows show when the shared link serves each activation; a 6 MiB flow on an otherwise free 1 MiB/ms link spans 6 ms.
+
 The command prints a table and a timeline for five policies: FIFO, equal bandwidth sharing, shortest remaining flow, and a timing-aware heuristic with either profiled or actual compute times. All policies see the **same actual work and link capacity**. To inspect why a policy chose a flow:
 
 ```bash
@@ -62,7 +71,7 @@ These are **crafted teaching examples**, not benchmark evidence that one policy 
 |---|---|
 | [`wantrain/sim/workload.py`](wantrain/sim/workload.py) | Parses simulator YAML and builds the forward/backward task dependency graph. |
 | [`wantrain/sim/engine.py`](wantrain/sim/engine.py) | Advances compute and flow events, applies link policies, records decisions and metrics. |
-| [`wantrain/sim/run.py`](wantrain/sim/run.py) | Runs policies, prints timelines, and optionally saves exact JSON traces. |
+| [`wantrain/sim/run.py`](wantrain/sim/run.py) | Runs policies, prints timelines, and optionally saves JSON traces and SVG plots. |
 | [`experiments/configs/`](experiments/configs/) | Input scenarios for the simulator and local PyTorch reference. |
 | [`tests/test_sim_engine.py`](tests/test_sim_engine.py) | Checks dependency order, link accounting, policy choices, determinism, and profile isolation. |
 | [`wantrain/reference.py`](wantrain/reference.py), [`wantrain/workloads.py`](wantrain/workloads.py) | Separate single-process PyTorch reference path. |

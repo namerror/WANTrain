@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from wantrain.sim.engine import POLICIES, Interval, Result, simulate
+from wantrain.sim.plot import plot_svg
 from wantrain.sim.workload import Scenario, load_scenario
 
 
@@ -61,6 +62,7 @@ def main() -> None:
     parser.add_argument("--no-timeline", action="store_true")
     parser.add_argument("--decisions", action="store_true", help="show flow choices when contenders or selection change")
     parser.add_argument("--output", type=Path, help="save exact result data as JSON")
+    parser.add_argument("--plot", type=Path, help="save an exact time-scaled SVG timeline")
     args = parser.parse_args()
 
     scenario = load_scenario(args.config)
@@ -105,6 +107,10 @@ def main() -> None:
         }
         args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(f"Exact intervals and metrics: {args.output}")
+    if args.plot:
+        args.plot.parent.mkdir(parents=True, exist_ok=True)
+        args.plot.write_text(plot_svg(results, scenario), encoding="utf-8")
+        print(f"Timeline plot: {args.plot}")
 
 
 if __name__ == "__main__":

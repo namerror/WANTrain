@@ -21,7 +21,7 @@ run.py: load_scenario() ──► workload.py: Scenario and Job
               └── record decisions, intervals, and metrics
               │
               ▼
-run.py: comparison table, sampled timeline, optional exact JSON
+run.py: comparison table, sampled timeline, optional exact JSON and SVG plot
 ```
 
 Read [`wantrain/sim/run.py`](../wantrain/sim/run.py) first to see the input/output contract, then [`workload.py`](../wantrain/sim/workload.py) to understand task dependencies, and finally [`engine.py`](../wantrain/sim/engine.py) to trace one event. The simulator does not call `wantrain/reference.py`; the local PyTorch reference is a separate path.
