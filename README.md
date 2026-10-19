@@ -35,7 +35,7 @@ uv run python -m wantrain.sim.run --config experiments/configs/scheduling_demo.y
   --policy fifo --policy srpt --policy echelon_static --decisions
 ```
 
-At **3 ms**, Job B's 2 MiB activation transfer becomes ready while Job A's transfer has 5 MiB left. `srpt` switches to B; `fifo` and `echelon_static` continue A. The printed timeline lets you follow that choice into each job's stage-1 compute and eventual step completion. See the [guided simulator walkthrough](docs/flow_scheduling_design.md) for the dependency graph, scheduling rule, and trace notation.
+At **3 ms**, Job B's 2 MiB activation transfer becomes ready while Job A's transfer has 5 MiB left. `srpt` switches to B; `fifo` and `echelon_static` continue A. The printed timeline lets you follow that choice into each job's stage-1 compute and eventual step completion. See the [policy reference](docs/scheduling_policies.md) for every policy's rule and tie-breaks, and the [guided simulator walkthrough](docs/flow_scheduling_design.md) for the dependency graph and trace notation.
 
 You can run the module with `python3 -m wantrain.sim.run` instead if PyYAML is already installed in that Python environment. Tests:
 
@@ -93,8 +93,9 @@ The CPU smoke config uses a tiny synthetic classifier. [`cifar10_resnet18_local.
 ## Read next
 
 1. [Simulator walkthrough](docs/flow_scheduling_design.md): follow one microbatch and one scheduling decision through the code.
-2. [Experiment guide](docs/experiments.md): change a scenario, compare policies fairly, and interpret outputs.
-3. [Proposed distributed runtime architecture](docs/architecture.md): longer-term ideas, separate from the current simulator.
+2. [Scheduling policy reference](docs/scheduling_policies.md): inspect each policy's inputs, allocation rule, tie-breaks, and trace key.
+3. [Experiment guide](docs/experiments.md): change a scenario, compare policies fairly, and interpret outputs.
+4. [Proposed distributed runtime architecture](docs/architecture.md): longer-term ideas, separate from the current simulator.
 
 ## License
 

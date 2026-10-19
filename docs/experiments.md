@@ -2,6 +2,8 @@
 
 This guide covers the **flow simulator** in `wantrain/sim/`. The single-process PyTorch reference uses different config fields and does not participate in these scheduling comparisons.
 
+For the exact selection and bandwidth rules behind each policy name, see the [scheduling policy reference](scheduling_policies.md).
+
 ## Run the two existing examples
 
 ```bash

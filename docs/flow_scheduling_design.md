@@ -69,6 +69,8 @@ The event heap makes event order deterministic; flow IDs break policy ties. The 
 
 ## What each policy asks
 
+The [scheduling policy reference](scheduling_policies.md) documents each rule, tie-break, input, and trace key in detail.
+
 | Policy | Rule when flows contend | Question it tests |
 |---|---|---|
 | `fifo` | Earliest release first | Does arrival order suffice? |
